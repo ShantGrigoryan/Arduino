@@ -3,19 +3,13 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 32
+#define OLED_RESET     -1
+#define SCREEN_ADDRESS 0x3C
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, & Wire, OLED_RESET);
 
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-// The pins for I2C are defined by the Wire-library. 
-// On an arduino UNO:       A4(SDA), A5(SCL)
-// On an arduino MEGA 2560: 20(SDA), 21(SCL)
-// On an arduino LEONARDO:   2(SDA),  3(SCL), ...
-#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-#define NUMFLAKES     10 // Number of snowflakes in the animation example
+#define NUMFLAKES     10
 
 #define LOGO_HEIGHT   16
 #define LOGO_WIDTH    16
@@ -23,7 +17,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define DHTPIN 4
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
- 
+float def = 25.11;
 static const unsigned char PROGMEM logo_bmp[] =
 { 0b00000000, 0b11000000,
   0b00000001, 0b11000000,
@@ -40,32 +34,70 @@ static const unsigned char PROGMEM logo_bmp[] =
   0b00111111, 0b11110000,
   0b01111100, 0b11110000,
   0b01110000, 0b01110000,
-  0b00000000, 0b00110000 };
+  0b00000000, 0b00110000
+};
 
 void setup() {
+  
   Serial.begin(9600);
-display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-display.clearDisplay();
-display.setTextSize(3);
-display.setCursor(0,0);
-display.setTextColor(SSD1306_WHITE);
-  // put your setup code here, to run once:
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.setTextColor(SSD1306_WHITE);
+
+  pinMode(2 , INPUT_PULLUP);
+  pinMode(3 , INPUT_PULLUP);
+  pinMode(8 , OUTPUT);
+
+
   display.print("Runing start");
-  Serial.print("Runing start");  
+  Serial.print("Runing start");
   display.display();
- dht.begin();
+  dht.begin();
+
 }
 
 
 void loop() {
-  // put your main code here, to run repeatedly:
-float h = dht.readHumidity();
-  // Read temperature as Celsius (the default)
-  float t = dht.readTemperature();
-  // Read temperature as Fahrenheit (isFahrenheit = true)
-  float f = dht.readTemperature(true);
   //haytararum a popoxakanner , veragrum a jermastijany u xonavutyuny
-  display.setTextSize(1);
-  diaplay.print("Temperature --> : " + t);
+  float h = dht.readHumidity();
 
+
+  float t = dht.readTemperature();
+
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.setTextSize(2);
+  display.println(t);
+  display.println(h);
+
+  Serial.print("Temperature --> ");
+  Serial.println(t);
+  Serial.println(h);
+  if (digitalRead(2) == LOW) {
+    delay(125);
+    def += 0.1;
+  }
+  if (digitalRead(3) == LOW) {
+    delay(125);
+    def -= 0.1;
+  }
+  if (t >= def) {
+    TempUp();
+  }
+  else {
+    TempLow();
+  }
+  display.setCursor(65,10);
+  display.print(round(def *100 )/100);
+  Serial.print(round(def*10)/10); 
+  display.display();
+}
+
+void TempUp() {
+  digitalWrite(8 , HIGH);
+}
+void TempLow() {
+  digitalWrite(8 , LOW);
 }
